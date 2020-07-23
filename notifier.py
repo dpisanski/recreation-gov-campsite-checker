@@ -2,6 +2,8 @@ import json
 import random
 import sys
 import time
+from twilio.rest import Client
+from twilio.rest import Client as TwilioClient 
 
 from hashlib import md5
 
@@ -19,6 +21,15 @@ with open(CREDENTIALS_FILE) as f:
     tc = json.load(f)
 
 
+def send_message(body):
+    client = Client(tc["twilio_account_sid"], tc["twilio_auth_token"])
+    message = client.messages.create(
+            to=tc["twilio_to_number"], from_=tc["twilio_from_number"], body=body)
+    print("The following was texted: ")
+    print()
+    print(body)
+
+
 def create_tweet(tweet):
     tweet = tweet[:MAX_TWEET_LENGTH]
     api = twitter.Api(
@@ -32,13 +43,6 @@ def create_tweet(tweet):
     print("The following was tweeted: ")
     print()
     print(tweet)
-
-# Janky simple argument parsing.
-if len(sys.argv) != 2:
-    print("Please provide the user you want to tweet at!")
-    sys.exit(1)
-
-user = sys.argv[1].replace("@", "")
 
 first_line = next(sys.stdin)
 first_line_hash = md5(first_line.encode("utf-8")).hexdigest()
@@ -56,7 +60,7 @@ if call_time + random.randint(DELAY_TIME-30, DELAY_TIME+30) > int(time.time()):
 
 
 if "Something went wrong" in first_line:
-    create_tweet("{}, I'm broken! Please help :'(".format(user))
+    send_message("I'm broken! Please help :'(")
     sys.exit()
 
 
@@ -70,12 +74,12 @@ for line in sys.stdin:
         available_site_strings.append(s)
 
 if available_site_strings:
-    tweet = "@{}!!! ".format(user)
+    tweet = "Hey!!!"
     tweet += first_line.rstrip()
     tweet += " 🏕🏕🏕\n"
     tweet += "\n".join(available_site_strings)
     tweet += "\n" + "🏕" * random.randint(5, 20)  # To avoid duplicate tweets.
-    create_tweet(tweet)
+    send_message(tweet)
     with open(delay_file, "w") as f:
         f.write(str(int(time.time())))
     sys.exit(0)
